@@ -50,7 +50,7 @@ app.layout = html.Div(
         html.H4("Interactive Sankey Design"),
         dcc.Graph(id="graph"),
         html.P("Depth"),
-        dcc.Slider(id="slider", min=2, max=10, value=2, step=1),
+        dcc.Slider(id="slider", min=2, max=20, value=2, step=1),
         html.P("Starting Node"),
         dcc.Dropdown(labels, "node_16", id="sankey-starter-dropdown", multi=False),
         html.P("Included Items"),
