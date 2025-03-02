@@ -12,7 +12,18 @@ labels_df = (
     .distinct()
     .union(df.select("target as node").distinct())
     .distinct()
-    .query("labels", "select *, row_number() over (order by node) as index from labels")
+    .query(
+        "labels",
+        """
+        with 
+            start as (
+                select 
+                    *, 
+                    row_number() over (order by node) as index 
+                from labels
+            ) 
+        select node, index - 1 as index from start""",
+    )
 )
 labels = labels_df.select("node").fetchnumpy()["node"].tolist()
 labels_df.create("v_label")
@@ -48,7 +59,7 @@ def update_output(value):
     Input("sankey-included-dropdown", "value"),
 )
 def display_sankey(depth, start_node, included_nodes):
-    print(start_node, included_nodes)
+    print(start_node, included_nodes, labels)
     included_nodes_np = numpy.array(included_nodes)
     items_df = df.query(
         "base",
@@ -58,7 +69,7 @@ def display_sankey(depth, start_node, included_nodes):
             source_label.node as source_node,
             target_label.index as target,
             target_label.node as target_node,
-            b.value
+            sum(b.value) as value
          from base b
          left join v_label source_label on b.source = source_label.node
          left join v_label target_label on b.target = target_label.node
@@ -66,6 +77,7 @@ def display_sankey(depth, start_node, included_nodes):
             b.source in (select * from included_nodes_np)
                 and
             b.target in (select * from included_nodes_np) 
+        group by 1,2,3,4
          """,
     )
     items_df.filter("source_node = 'node_17' or target_node = 'node_17' ").show()
